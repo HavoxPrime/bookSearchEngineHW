@@ -1,23 +1,32 @@
 {
-  "name": "googlebooks-app",
+  "name": "booksearchenginehw",
   "version": "1.0.0",
   "description": "",
-  "main": "server/server.js",
+  "main": "index.js",
   "scripts": {
     "start": "node server/server.js",
     "develop": "concurrently \"cd server && npm run watch\" \"cd client && npm start\"",
     "install": "cd server && npm i && cd ../client && npm i",
     "build": "cd client && npm run build"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HavoxPrime/bookSearchEngineHW.git"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "@apollo/react-hooks": "^4.0.0",
-    "apollo-server-express": "^2.19.1",
-    "if-env": "^1.0.4"
+  "bugs": {
+    "url": "https://github.com/HavoxPrime/bookSearchEngineHW/issues"
   },
   "devDependencies": {
-    "concurrently": "^5.2.0"
-  }
+    "@types/jwt-decode": "^3.1.0",
+    "concurrently": "^5.1.0"
+  },
+  "dependencies": {
+    "apollo-server": "^3.3.0",
+    "apollo-server-core": "^3.3.0",
+    "graphql": "^15.6.0"
+  },
+  "homepage": "https://github.com/HavoxPrime/bookSearchEngineHW#readme"
 }

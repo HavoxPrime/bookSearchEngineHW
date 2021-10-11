@@ -1,59 +1,82 @@
-const { User } = require("../models");
-
-const { AuthenticationError } = require("apollo-server-express");
+const { User, Book } = require("../models");
 const { signToken } = require("../utils/auth");
 
 const resolvers = {
   Query: {
-    me: async (parent, args, context) => {
-      if (context.user) {
-        const userData = await User.findOne({ _id: context.user._id }).select(
-          "-__v -password"
-        );
-        return userData;
-      }
-      throw new AuthenticationError("Not logged in");
+    // Use JWT auth to find and return the appropriate user
+    // GraphQL will automatically attach the user to the context
+    me: async () => {
+      console.log(user);
+      console.log(req.user);
     },
   },
   Mutation: {
-    login: async (parent, { email, password }) => {
+    login: async (parent, { email, password }, token) => {
       const user = await User.findOne({ email });
       if (!user) {
-        throw new AuthenticationError("Incorrect credentials");
+        throw new Error("User does not exist");
       }
-      const correctPw = await user.isCorrectPassword(password);
-      if (!correctPw) {
-        throw new AuthenticationError("Incorrect credentials");
+      const valid = await user.isCorrectPassword(password);
+      if (!valid) {
+        throw new Error("Invalid password");
       }
-      const token = signToken(user);
+      const signedToken = signToken(user);
+      return {
+        token: signedToken,
+        user,
+      };
+    },
 
-      return { token, user };
+    addUser: async (parent, { username, email, password }, token) => {
+      const user = await User.create({
+        username,
+        email,
+        password,
+      });
+
+      const signedToken = signToken(user);
+
+      return { token: signedToken, user };
     },
-    addUser: async (parent, args) => {
-      const user = await User.create(args);
-      const token = signToken(user);
-      return { token, user };
-    },
-    saveBook: async (parent, { body }, context) => {
-      if (context.user) {
-        const updatedUser = await User.findOneAndUpdate(
-          { _id: context.user._id },
-          { $addToSet: { savedBooks: body } },
-          { new: true }
-        );
-        return updatedUser;
+
+    saveBook: async (
+      parent,
+      { bookAuthors, description, title, bookId, image, link },
+      token
+    ) => {
+      const user = await User.findOne({ id: token.userId });
+      if (!user) {
+        throw new Error("User does not exist");
       }
-      throw new AuthenticationError("You need to be logged in!");
+
+      const book = await Book.create({
+        bookAuthors,
+        description,
+        title,
+        bookId,
+        image,
+        link,
+      });
+
+      user.addBook(book);
+
+      return user;
     },
-    removeBook: async (parent, { bookId }, context) => {
-      if (context.user) {
-        const updatedUser = await User.findOneAndUpdate(
-          { _id: context.user._id },
-          { $pull: { savedBooks: { bookId: bookId } } },
-          { new: true }
-        );
-        return updatedUser;
+
+    removeBook: async (parent, { bookId }, token) => {
+      const user = await User.findOne({ id: token.userId });
+      if (!user) {
+        throw new Error("User does not exist");
       }
+
+      const book = await Book.findOne({ id: bookId });
+      if (!book) {
+        throw new Error("Book does not exist");
+      }
+
+      user.removeBook(book);
+
+      return user;
     },
   },
 };
